@@ -28,6 +28,35 @@ public class SensorResource {
     private static final Map<String, Sensor> sensorStore = new HashMap<>();
  
  
+    // ════════════════════════════════════════════════════════════════════════
+    // PART 4.1 — SUB-RESOURCE LOCATOR
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // This method is a "Sub-Resource Locator".
+    // It does NOT handle the request itself.
+    // Instead, it passes control to a dedicated SensorReadingResource class.
+    //
+    // URL pattern handled: /api/v1/sensors/{sensorId}/readings
+    //
+    // IMPORTANT: There is NO @GET / @POST / @PUT here — only @Path.
+    // JAX-RS sees the @Path and knows to delegate further processing
+    // to whatever object this method returns.
+    // ════════════════════════════════════════════════════════════════════════
+    @Path("{sensorId}/readings")
+    public SensorReadingResource getReadingResource(@PathParam("sensorId") String sensorId) {
+ 
+        // We pass the sensorId AND the sensorStore to SensorReadingResource
+        // so it can:
+        //   1. Look up the sensor to validate it exists
+        //   2. Update the sensor's currentValue after a new reading is posted
+        return new SensorReadingResource(sensorId, sensorStore);
+    }
+ 
+ 
+    // ════════════════════════════════════════════════════════════════════════
+    // EXISTING METHODS (unchanged from Part 3)
+    // ════════════════════════════════════════════════════════════════════════
+ 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createSensor(Sensor sensor) {
@@ -59,7 +88,6 @@ public class SensorResource {
         }
  
         // ── Validation 4: roomId must EXIST in the room store (Business Rule) ─
-        // We look up the room using RoomResource's shared roomStore
         Room targetRoom = RoomResource.roomStore.get(sensor.getRoomId());
  
         if (targetRoom == null) {
@@ -88,7 +116,8 @@ public class SensorResource {
         // Save the sensor in the sensor store
         sensorStore.put(sensor.getId(), sensor);
  
-         targetRoom.getSensorIds().add(sensor.getId());
+        // Link sensor ID to the room
+        targetRoom.getSensorIds().add(sensor.getId());
  
         // Build a success response
         Map<String, Object> success = new HashMap<>();
@@ -111,8 +140,6 @@ public class SensorResource {
         }
  
         // ── Filter provided → return only matching sensors ───────────────────
-        // We use a simple loop to find sensors where the type matches.
-        // .equalsIgnoreCase() makes the search case-insensitive.
         List<Sensor> filtered = new ArrayList<>();
         for (Sensor s : allSensors) {
             if (s.getType() != null && s.getType().equalsIgnoreCase(type.trim())) {
@@ -120,7 +147,6 @@ public class SensorResource {
             }
         }
  
-        // Build a descriptive response so the client knows what filter was applied
         Map<String, Object> response = new HashMap<>();
         response.put("filterApplied", type);
         response.put("count",         filtered.size());

@@ -40,3 +40,4 @@ public class Sensor {
     public void setCurrentValue(double currentValue) { this.currentValue = currentValue; }
     public void setRoomId(String roomId)           { this.roomId = roomId; }
 }
+

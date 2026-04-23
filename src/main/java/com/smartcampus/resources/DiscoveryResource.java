@@ -12,27 +12,6 @@ import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 
-/*
- * DiscoveryResource - Handles GET /api/v1
- *
- * This is your API's "welcome page" for developers.
- * When someone visits GET /api/v1, they get a JSON map showing:
- *   - What version this API is
- *   - Who to contact for help
- *   - What endpoints are available (and their URLs)
- *
- * This concept is called HATEOAS (Hypermedia As The Engine Of Application State).
- * Instead of forcing clients to guess or read separate docs,
- * the API itself tells clients where everything is.
- *
- * ANNOTATIONS EXPLAINED:
- *   @Path("/")       → This class handles requests to /api/v1/ (the root)
- *                      Remember: @ApplicationPath already added "/api/v1"
- *                      So @Path("/") here means: /api/v1 + / = /api/v1
- *
- *   @GET             → This method responds to HTTP GET requests
- *   @Produces(...)   → This method returns JSON (tells the client what format to expect)
- */
 @Path("/")
 public class DiscoveryResource {
 

@@ -5,6 +5,7 @@ Name :- Yogarajah Rahulshanth
                                          Answers for Client Server Architecture Questions
 
 Part 1
+
 1.1  
 By default, JAX-RS creates a new instance of every resource class for each incoming HTTP request (per-request lifecycle). This means resource classes are not singletons. Because of this, in-memory data structures such as HashMap and ArrayList must be declared as static fields — shared across all instances — and ideally accessed through a separate data store class. Without static storage, each request would see an empty, fresh collection, causing all stored data to be lost. In concurrent environments, ConcurrentHashMap should be used to prevent race conditions.
 
@@ -13,6 +14,7 @@ This class handles GET /api/v1. The @Path("/") annotation combined with the @App
 The most important part is the links map inside the response. This is where HATEOAS comes in you're telling any client that calls your API: "Here are the URLs you can explore next."
 
 Part 2
+
 2.1  
 Returning only IDs reduces response size and saves network bandwidth, but forces clients to make additional requests to retrieve full details, increasing total traffic. Returning full room objects provides all data in one request, which is more efficient for clients needing complete information. For a small-scale system like Smart Campus, returning full objects is the more practical and client-friendly approach. 
 
@@ -20,6 +22,7 @@ Returning only IDs reduces response size and saves network bandwidth, but forces
 Yes, DELETE is idempotent in this implementation. The first request successfully deletes the room and returns HTTP 200. Any subsequent identical request returns HTTP 404 because the resource no longer exists. The server's state does not change after the first deletion. Idempotency means repeated calls produce the same final state, which this implementation satisfies even though the response code differs across calls. 
 
 Part 3
+
 3.1  
 When a client sends a request with a Content-Type header that does not match the @Consumes(MediaType.APPLICATION_JSON) annotation, JAX-RS automatically rejects the request before it even reaches the method body. The framework returns an HTTP 415 Unsupported Media Type response. This protects the server from attempting to parse incompatible data formats and ensures only correctly formatted JSON is processed. 
 
@@ -27,10 +30,12 @@ When a client sends a request with a Content-Type header that does not match the
 Query parameters are better suited for filtering because they are optional by nature — the same endpoint /sensors works with or without ?type=CO2. In contrast, embedding the type in the path like /sensors/type/CO2 makes filtering mandatory and creates a different resource path entirely, which violates REST principles. Query parameters also support combining multiple filters easily, for example ?type=CO2&status=active. 
 
 Part 4
+
 4.1  
 The Sub-Resource Locator pattern improves code organisation by delegating nested resource logic to dedicated classes. Instead of one large controller handling every possible URL, each class has a single, clear responsibility. This makes the code easier to read, test, and maintain. In large APIs, a single controller quickly becomes unmanageable, while the locator pattern keeps each class focused and modular. 
 
 Part 5
+
 5.2  
 HTTP 404 means the requested URL was not found. However, the endpoint /api/v1/sensors exists and is valid. The problem is not the URL but the data inside the request body , the roomId references a resource that does not exist. HTTP 422 Unprocessable Entity is more semantically accurate because it signals that the JSON payload is syntactically valid but cannot be processed due to a broken internal reference. 
 

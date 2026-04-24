@@ -7,6 +7,7 @@ package com.smartcampus.resources;
  
 import com.smartcampus.models.Sensor;
 import com.smartcampus.models.Room;
+import com.smartcampus.exceptions.LinkedResourceNotFoundException;
  
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -21,27 +22,12 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 public class SensorResource {
  
-    // ── In-memory sensor store ───────────────────────────────────────────────
-    // Key   = Sensor ID (e.g., "SENS-001")
-    // Value = Sensor object
-    // "static" ensures all requests share the same data store
     private static final Map<String, Sensor> sensorStore = new HashMap<>();
- 
  
     // ════════════════════════════════════════════════════════════════════════
     // PART 4.1 — SUB-RESOURCE LOCATOR
     // ════════════════════════════════════════════════════════════════════════
-    //
-    // This method is a "Sub-Resource Locator".
-    // It does NOT handle the request itself.
-    // Instead, it passes control to a dedicated SensorReadingResource class.
-    //
-    // URL pattern handled: /api/v1/sensors/{sensorId}/readings
-    //
-    // IMPORTANT: There is NO @GET / @POST / @PUT here — only @Path.
-    // JAX-RS sees the @Path and knows to delegate further processing
-    // to whatever object this method returns.
-    // ════════════════════════════════════════════════════════════════════════
+    
     @Path("{sensorId}/readings")
     public SensorReadingResource getReadingResource(@PathParam("sensorId") String sensorId) {
  
@@ -51,7 +37,6 @@ public class SensorResource {
         //   2. Update the sensor's currentValue after a new reading is posted
         return new SensorReadingResource(sensorId, sensorStore);
     }
- 
  
     // ════════════════════════════════════════════════════════════════════════
     // EXISTING METHODS (unchanged from Part 3)
@@ -87,15 +72,13 @@ public class SensorResource {
             return Response.status(Response.Status.BAD_REQUEST).entity(error).build();
         }
  
-        // ── Validation 4: roomId must EXIST in the room store (Business Rule) ─
+        // ── Validation 4: roomId must EXIST  [UPDATED FOR PART 5.2] ─────────────
         Room targetRoom = RoomResource.roomStore.get(sensor.getRoomId());
- 
-        if (targetRoom == null) {
-            Map<String, String> error = new HashMap<>();
-            error.put("status",  "error");
-            error.put("message", "Room with ID '" + sensor.getRoomId() +
-                                 "' does not exist. Please create the room first.");
-            return Response.status(Response.Status.NOT_FOUND).entity(error).build();
+
+            if (targetRoom == null) {
+            // THROW our custom exception instead of building a manual response.
+            // LinkedResourceNotFoundExceptionMapper will catch this and return HTTP 422.
+            throw new LinkedResourceNotFoundException("Room", sensor.getRoomId());
         }
  
         // ── Validation 5: Prevent duplicate sensor IDs ───────────────────────

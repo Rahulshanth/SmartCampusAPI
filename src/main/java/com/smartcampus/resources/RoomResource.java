@@ -24,15 +24,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.smartcampus.exceptions.RoomNotEmptyException;
 
 @Path("/rooms")
 @Produces(MediaType.APPLICATION_JSON)
 public class RoomResource {
 
-    // ── In-memory data store ─────────────────────────────────────────────────
-    // *** CHANGED: private → public so SensorResource can access this map ***
-    // Key   = Room ID (e.g., "LIB-301")
-    // Value = Room object
     public static final Map<String, Room> roomStore = new HashMap<>();
 
     // ── Sample data loaded once when the server starts ───────────────────────
@@ -40,7 +37,6 @@ public class RoomResource {
         Room sample = new Room("LIB-301", "Library Quiet Study", 50);
         roomStore.put(sample.getId(), sample);
     }
-
 
     // =========================================================================
     // PART 2.1 — GET /api/v1/rooms
@@ -51,10 +47,9 @@ public class RoomResource {
         return Response.ok(rooms).build();
     }
 
-
-    // =========================================================================
+    // ===========================
     // PART 2.1 — GET /api/v1/rooms/{roomId}
-    // =========================================================================
+    // ============================
     @GET
     @Path("/{roomId}")
     public Response getRoomById(@PathParam("roomId") String roomId) {
@@ -71,10 +66,9 @@ public class RoomResource {
         return Response.ok(room).build();
     }
 
-
-    // =========================================================================
+    // =========================
     // PART 2.1 — POST /api/v1/rooms
-    // =========================================================================
+    // ===========================
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createRoom(Room room) {
@@ -113,38 +107,37 @@ public class RoomResource {
     }
 
 
-    // =========================================================================
+    // =========================
     // PART 2.2 — DELETE /api/v1/rooms/{roomId}
-    // =========================================================================
+    // =========================
     @DELETE
-    @Path("/{roomId}")
-    public Response deleteRoom(@PathParam("roomId") String roomId) {
+@Path("/{roomId}")
+public Response deleteRoom(@PathParam("roomId") String roomId) {
 
-        Room room = roomStore.get(roomId);
+    Room room = roomStore.get(roomId);
 
-        if (room == null) {
-            Map<String, String> error = new HashMap<>();
-            error.put("status",  "error");
-            error.put("message", "Room with ID '" + roomId + "' was not found.");
-            return Response.status(Response.Status.NOT_FOUND).entity(error).build();
-        }
-
-        if (!room.getSensorIds().isEmpty()) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("status",          "error");
-            error.put("message",         "Cannot delete room '" + roomId + "'. " +
-                                         "It still has " + room.getSensorIds().size() +
-                                         " sensor(s) assigned. Remove all sensors first.");
-            error.put("assignedSensors", room.getSensorIds());
-            return Response.status(Response.Status.CONFLICT).entity(error).build();
-        }
-
-        roomStore.remove(roomId);
-
-        Map<String, String> success = new HashMap<>();
-        success.put("status",  "success");
-        success.put("message", "Room '" + roomId + "' has been successfully deleted.");
-
-        return Response.ok(success).build();
+    // Room not found → 404
+    if (room == null) {
+        Map<String, String> error = new HashMap<>();
+        error.put("status",  "error");
+        error.put("message", "Room with ID '" + roomId + "' was not found.");
+        return Response.status(Response.Status.NOT_FOUND).entity(error).build();
     }
+
+    // ── PART 5.1: Room has sensors → throw RoomNotEmptyException ────────────
+    // Instead of manually building a response here,
+    // we THROW our custom exception.
+    // JAX-RS will catch it and send it to RoomNotEmptyExceptionMapper automatically.
+    if (!room.getSensorIds().isEmpty()) {
+        throw new RoomNotEmptyException(roomId, room.getSensorIds());
+    }
+
+    // All clear → delete the room
+    roomStore.remove(roomId);
+
+    Map<String, String> success = new HashMap<>();
+    success.put("status",  "success");
+    success.put("message", "Room '" + roomId + "' has been successfully deleted.");
+    return Response.ok(success).build();
+}
 }

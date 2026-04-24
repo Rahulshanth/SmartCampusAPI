@@ -22,12 +22,10 @@ public class DiscoveryResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response discover() {
+        
+        // TEMPORARY TEST LINE — remove after recording
+        //if (true) throw new NullPointerException("Simulated crash for testing");
 
-        // We build the response as a nested Map.
-        // Jersey + Jackson will automatically convert this Map into JSON for us.
-
-        // --- Links section (this is the HATEOAS part) ---
-        // We tell clients: "here are the URL paths you can explore"
         Map<String, String> links = new HashMap<>();
         links.put("rooms",    "/api/v1/rooms");
         links.put("sensors",  "/api/v1/sensors");

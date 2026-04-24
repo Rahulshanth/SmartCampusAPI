@@ -6,6 +6,7 @@ package com.smartcampus.resources;
 
 import com.smartcampus.models.Sensor;
 import com.smartcampus.models.SensorReading;
+import com.smartcampus.exceptions.SensorUnavailableException;
  
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -19,26 +20,15 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 public class SensorReadingResource {
  
-    // ── In-memory readings store ─────────────────────────────────────────────
-    // Key   = Sensor ID  (e.g., "SENS-001")
-    // Value = List of SensorReading objects recorded for that sensor
-    //
-    // "static" means ALL instances of this class share the SAME map,
-    // so readings are never lost between requests.
     private static final Map<String, List<SensorReading>> readingsStore = new HashMap<>();
  
-    // ── Fields set by the sub-resource locator ───────────────────────────────
-    // SensorResource passes these values when it creates this object
     private final String              sensorId;    // which sensor we are working with
     private final Map<String, Sensor> sensorStore; // shared reference to all sensors
  
-    // ── Constructor ──────────────────────────────────────────────────────────
-    // Called by SensorResource's sub-resource locator method
     public SensorReadingResource(String sensorId, Map<String, Sensor> sensorStore) {
         this.sensorId    = sensorId;
         this.sensorStore = sensorStore;
     }
- 
  
     // ════════════════════════════════════════════════════════════════════════
     // PART 4.2 — GET /api/v1/sensors/{sensorId}/readings
@@ -71,7 +61,6 @@ public class SensorReadingResource {
         return Response.ok(response).build(); // HTTP 200
     }
  
- 
     // ════════════════════════════════════════════════════════════════════════
     // PART 4.2 — POST /api/v1/sensors/{sensorId}/readings
     // Adds a new reading and updates the parent sensor's currentValue
@@ -88,6 +77,11 @@ public class SensorReadingResource {
             error.put("status",  "error");
             error.put("message", "Sensor with ID '" + sensorId + "' does not exist.");
             return Response.status(Response.Status.NOT_FOUND).entity(error).build(); // HTTP 404
+        }
+        
+        // ── PART 5.3: Check sensor is not in MAINTENANCE state 
+        if ("MAINTENANCE".equalsIgnoreCase(sensor.getStatus())) {
+            throw new SensorUnavailableException(sensorId, sensor.getStatus());
         }
  
         // ── Step 2: Validate the request body ───────────────────────────────
